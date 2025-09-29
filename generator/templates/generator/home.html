@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ZynoxGenI | AI Website Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/motion@10.16.2/dist/motion.min.js"></script>
+
+  <style>
+    body {
+      background: radial-gradient(circle at top left, #0f172a, #1e293b, #020617);
+      background-size: 400% 400%;
+      animation: gradientMove 20s ease infinite;
+    }
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glow-btn {
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      color: white;
+      box-shadow: 0 0 15px rgba(59,130,246,0.6);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .glow-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px rgba(139,92,246,0.8);
+    }
+    .animate-text {
+      background: linear-gradient(90deg, #3b82f6, #22c55e, #8b5cf6);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 4s linear infinite;
+    }
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col text-white">
+
+  <!-- Header -->
+  <header class="fixed top-0 left-0 w-full z-50 p-4 flex justify-between items-center glass rounded-b-xl">
+    <h1 class="text-lg md:text-xl font-bold animate-text">⚡ ZynoxGenI</h1>
+    <nav class="hidden md:flex gap-6 text-sm md:text-base">
+      <a href="#generate" class="hover:underline">Generate</a>
+      <a href="#about" class="hover:underline">About</a>
+    </nav>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 flex flex-col items-center px-4 md:px-8 mt-24">
+
+    <!-- Generator Card -->
+    <section id="generate" class="w-full max-w-4xl glass rounded-2xl shadow-2xl p-6 md:p-10">
+      <h2 class="text-2xl md:text-3xl font-extrabold mb-4 animate-text">AI Website Generator</h2>
+
+      <!-- Highlighted tagline -->
+      <div class="text-center mb-6">
+        <h3 id="highlightText" class="text-lg md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          Generate websites with <span class="animate-text">ZynoxGenI</span> in 30 seconds 🚀
+        </h3>
+      </div>
+
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="block font-semibold mb-1">Title</label>
+          <input type="text" name="title" placeholder="My Website"
+            class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base">
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Prompt</label>
+          <textarea name="prompt" rows="4" placeholder="Describe your website idea..."
+            class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base"></textarea>
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Mode</label>
+          <select name="mode" class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base">
+            <option value="local">Local Generator</option>
+            <option value="ai">AI (ZynoxGenI)</option>
+          </select>
+        </div>
+        <button type="submit" class="glow-btn px-6 py-3 rounded-lg font-bold w-full md:w-auto">⚡ Generate Website</button>
+      </form>
+    </section>
+
+    <!-- Results -->
+    {% if generated_html %}
+    <section class="mt-10 w-full max-w-5xl glass rounded-2xl shadow-2xl p-4 md:p-6">
+      <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
+        <div class="flex gap-2">
+          <button id="tabPreview" class="glow-btn px-4 py-2 rounded-lg text-sm md:text-base">Preview</button>
+          <button id="tabCode" class="px-4 py-2 rounded-lg bg-slate-700 text-sm md:text-base">Code</button>
+        </div>
+        <button onclick="downloadHTML()" class="glow-btn px-4 py-2 rounded-lg ml-auto text-sm md:text-base">⬇ Download</button>
+      </div>
+
+      <div id="previewArea">
+         <iframe srcdoc="{{ generated_html|safe }}" class="w-full h-[600px] rounded-xl border"></iframe>
+      </div>
+
+
+      <div id="codeArea" class="hidden">
+        <textarea id="htmlOutput" class="w-full h-[400px] md:h-[600px] p-4 rounded-lg bg-slate-900 text-green-400 font-mono text-xs md:text-sm">{{ generated_html }}</textarea>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- About -->
+    <section id="about" class="mt-20 max-w-3xl text-center text-slate-300 px-2 md:px-0">
+      <h2 class="text-xl md:text-2xl font-bold mb-4">About ZynoxGenI</h2>
+      <p class="text-sm md:text-base">
+        We craft intelligent, digital-first solutions to turn your ideas into stunning interactive websites with the power of AI.
+        This generator is one of our flagship projects, showcasing innovation at the intersection of design and technology.
+      </p>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-20 w-full glass border-t border-white/10">
+    <div class="max-w-6xl mx-auto px-6 py-10 grid md:grid-cols-3 gap-8 text-slate-300 text-sm md:text-base">
+      <div>
+        <h3 class="text-lg md:text-xl font-bold animate-text">⚡ ZynoxGenI</h3>
+        <p class="mt-3">Shaping the future with AI-powered digital experiences.</p>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3">Quick Links</h4>
+        <ul class="space-y-2">
+          <li><a href="#generate" class="hover:underline">Generate Website</a></li>
+          <li><a href="#about" class="hover:underline">About</a></li>
+          <li><a href="mailto:info@zynoxgeni.com" class="hover:underline">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-semibold mb-3">Connect</h4>
+        <div class="flex gap-4 text-lg">
+          <a href="https://github.com/zynoxgeni" target="_blank">🐙</a>
+          <a href="https://linkedin.com/company/zynoxgeni" target="_blank">💼</a>
+          <a href="https://twitter.com/zynoxgeni" target="_blank">𝕏</a>
+          <a href="https://instagram.com/zynoxgeni" target="_blank">📸</a>
+        </div>
+      </div>
+    </div>
+    <div class="text-center py-4 text-xs text-slate-400 border-t border-white/5">
+      © {{ year|default:2025 }} ZynoxGenI Technologies. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Highlight tagline animation
+    const highlight = document.getElementById("highlightText");
+    if (highlight) {
+      highlight.animate(
+        [
+          { transform: "scale(1)", opacity: 0.8 },
+          { transform: "scale(1.05)", opacity: 1 },
+          { transform: "scale(1)", opacity: 0.9 }
+        ],
+        { duration: 3000, iterations: Infinity, easing: "ease-in-out" }
+      );
+    }
+
+    // Tab switching
+    const previewBtn = document.getElementById("tabPreview");
+    const codeBtn = document.getElementById("tabCode");
+    const previewArea = document.getElementById("previewArea");
+    const codeArea = document.getElementById("codeArea");
+    if (previewBtn && codeBtn) {
+      previewBtn.addEventListener("click", () => {
+        previewArea.classList.remove("hidden");
+        codeArea.classList.add("hidden");
+        previewBtn.classList.add("glow-btn");
+        codeBtn.classList.remove("glow-btn");
+      });
+      codeBtn.addEventListener("click", () => {
+        previewArea.classList.add("hidden");
+        codeArea.classList.remove("hidden");
+        codeBtn.classList.add("glow-btn");
+        previewBtn.classList.remove("glow-btn");
+      });
+    }
+
+    // Download function
+    function downloadHTML() {
+      const content = document.getElementById("htmlOutput").value;
+      const blob = new Blob([content], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "website.html";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
