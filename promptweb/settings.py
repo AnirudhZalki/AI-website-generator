@@ -11,6 +11,7 @@ ALLOWED_HOSTS = [
     "zynoxgeni-ai-website.onrender.com",
     "localhost",
     "127.0.0.1"
+    "anirudhzalki.github.io/zynoxgeni-website-generator/"
 ]  # Replace * with your Render URL for more security
 
 # Applications
