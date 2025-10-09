@@ -35,6 +35,11 @@
       transform: scale(1.05);
       box-shadow: 0 0 25px rgba(139,92,246,0.8);
     }
+    .glow-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: scale(1);
+    }
     .animate-text {
       background: linear-gradient(90deg, #3b82f6, #22c55e, #8b5cf6);
       background-size: 200% auto;
@@ -44,6 +49,35 @@
     }
     @keyframes shine {
       to { background-position: 200% center; }
+    }
+    .tab-btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      transition: all 0.3s;
+      background: rgba(100, 116, 139, 0.3);
+    }
+    .tab-btn.active {
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      box-shadow: 0 0 15px rgba(59,130,246,0.6);
+    }
+    .feature-checkbox {
+      accent-color: #8b5cf6;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+    .file-item {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(100, 116, 139, 0.3);
+      transition: all 0.2s;
+    }
+    .file-item:hover {
+      background: rgba(51, 65, 85, 0.6);
+      border-color: rgba(139, 92, 246, 0.5);
+    }
+    .code-preview {
+      background: #0f172a;
+      border: 1px solid rgba(100, 116, 139, 0.3);
     }
   </style>
 </head>
@@ -61,6 +95,31 @@
   <!-- Main Container -->
   <main class="flex-1 flex flex-col items-center px-4 md:px-8 mt-24">
 
+    <!-- Error/Success Messages -->
+    {% if error %}
+    <div class="w-full max-w-4xl mb-6 glass rounded-xl p-4 border-l-4 border-red-500">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">⚠️</span>
+        <div>
+          <p class="font-semibold">Error</p>
+          <p class="text-sm text-slate-300">{{ error }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if success %}
+    <div class="w-full max-w-4xl mb-6 glass rounded-xl p-4 border-l-4 border-green-500">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">✅</span>
+        <div>
+          <p class="font-semibold">Success!</p>
+          <p class="text-sm text-slate-300">Your website has been generated successfully.</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Generator Card -->
     <section id="generate" class="w-full max-w-4xl glass rounded-2xl shadow-2xl p-6 md:p-10">
       <h2 class="text-2xl md:text-3xl font-extrabold mb-4 animate-text">AI Website Generator</h2>
@@ -68,51 +127,206 @@
       <!-- Highlighted tagline -->
       <div class="text-center mb-6">
         <h3 id="highlightText" class="text-lg md:text-2xl font-bold bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-          Generate websites with <span class="animate-text">ZynoxGenI</span> in 30 seconds 🚀
+          Generate <span id="projectTypeText">static</span> websites with <span class="animate-text">ZynoxGenI</span> in 30 seconds 🚀
         </h3>
       </div>
 
-      <form method="post" class="space-y-4">
+      <!-- Project Type Tabs -->
+      <div class="flex gap-3 mb-6 flex-wrap">
+        <button type="button" onclick="switchProjectType('static')"
+                class="tab-btn active" id="staticTab">
+          🌐 Static Website
+        </button>
+        <button type="button" onclick="switchProjectType('fullstack')"
+                class="tab-btn" id="fullstackTab">
+          ⚙️ Full-Stack Website
+        </button>
+      </div>
+
+      <form method="post" id="generatorForm" class="space-y-4">
         {% csrf_token %}
+        <input type="hidden" name="project_type" id="project_type" value="static">
+
+        <!-- Title -->
         <div>
           <label class="block font-semibold mb-1">Title</label>
-          <input type="text" name="title" placeholder="My Website"
-            class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base">
+          <input type="text" name="title" required placeholder="My Awesome Website"
+            class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base focus:ring-2 focus:ring-purple-500 focus:outline-none">
         </div>
+
+        <!-- Prompt -->
         <div>
-          <label class="block font-semibold mb-1">Prompt</label>
-          <textarea name="prompt" rows="4" placeholder="Describe your website idea..."
-            class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base"></textarea>
+          <label class="block font-semibold mb-1">Describe Your Website</label>
+          <textarea name="prompt" rows="4" required placeholder="E.g., A modern portfolio website for a photographer with gallery, about, and contact sections..."
+            class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base focus:ring-2 focus:ring-purple-500 focus:outline-none"></textarea>
         </div>
-        <div>
-          <label class="block font-semibold mb-1">Mode</label>
-          <select name="mode" class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base">
-            <option value="local">Local Generator</option>
-            <option value="ai">AI (ZynoxGenI)</option>
+
+        <!-- Static Options -->
+        <div id="staticOptions">
+          <label class="block font-semibold mb-1">Generation Mode</label>
+          <select name="mode" class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base focus:ring-2 focus:ring-purple-500 focus:outline-none">
+            <option value="ai">AI Powered (ZynoxGenI)</option>
+            <option value="local">Simple Template</option>
           </select>
         </div>
-        <button type="submit" class="glow-btn px-6 py-3 rounded-lg font-bold w-full md:w-auto">⚡ Generate Website</button>
+
+        <!-- Full-Stack Options -->
+        <div id="fullstackOptions" class="hidden space-y-4">
+          <!-- Stack Selection -->
+          <div>
+            <label class="block font-semibold mb-1">Tech Stack</label>
+            <select name="stack" class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700 text-sm md:text-base focus:ring-2 focus:ring-purple-500 focus:outline-none">
+              <option value="react_node">⚛️ React + Node.js + Express</option>
+              <option value="nextjs">▲ Next.js (Full-Stack)</option>
+              <option value="vue_express">💚 Vue.js + Express</option>
+              <option value="django_react">🐍 Django + React</option>
+            </select>
+          </div>
+
+          <!-- Features -->
+          <div>
+            <label class="block font-semibold mb-3">Features (Optional)</label>
+            <div class="space-y-3">
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-900/20 hover:bg-slate-900/40 cursor-pointer transition">
+                <input type="checkbox" name="has_authentication" class="feature-checkbox">
+                <div>
+                  <span class="font-medium">🔐 User Authentication</span>
+                  <p class="text-xs text-slate-400">Login, Register, JWT/Session</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-900/20 hover:bg-slate-900/40 cursor-pointer transition">
+                <input type="checkbox" name="has_database" class="feature-checkbox">
+                <div>
+                  <span class="font-medium">💾 Database Integration</span>
+                  <p class="text-xs text-slate-400">PostgreSQL/MongoDB with models</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-900/20 hover:bg-slate-900/40 cursor-pointer transition">
+                <input type="checkbox" name="has_api" class="feature-checkbox" checked>
+                <div>
+                  <span class="font-medium">🔌 RESTful API</span>
+                  <p class="text-xs text-slate-400">CRUD endpoints with validation</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-900/20 hover:bg-slate-900/40 cursor-pointer transition">
+                <input type="checkbox" name="has_realtime" class="feature-checkbox">
+                <div>
+                  <span class="font-medium">⚡ Real-time Updates</span>
+                  <p class="text-xs text-slate-400">WebSockets for live data</p>
+                </div>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-lg bg-slate-900/20 hover:bg-slate-900/40 cursor-pointer transition">
+                <input type="checkbox" name="has_payments" class="feature-checkbox">
+                <div>
+                  <span class="font-medium">💳 Payment Integration</span>
+                  <p class="text-xs text-slate-400">Stripe payment setup</p>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="glow-btn px-6 py-3 rounded-lg font-bold w-full md:w-auto">
+          ⚡ Generate Website
+        </button>
       </form>
     </section>
 
-    <!-- Results -->
+    <!-- Results for Static Website -->
     {% if generated_html %}
     <section class="mt-10 w-full max-w-5xl glass rounded-2xl shadow-2xl p-4 md:p-6">
       <div class="flex flex-col md:flex-row md:items-center gap-4 mb-4">
         <div class="flex gap-2">
-          <button id="tabPreview" class="glow-btn px-4 py-2 rounded-lg text-sm md:text-base">Preview</button>
-          <button id="tabCode" class="px-4 py-2 rounded-lg bg-slate-700 text-sm md:text-base">Code</button>
+          <button id="tabPreview" class="glow-btn px-4 py-2 rounded-lg text-sm md:text-base">👁️ Preview</button>
+          <button id="tabCode" class="px-4 py-2 rounded-lg bg-slate-700 text-sm md:text-base">📄 Code</button>
         </div>
-        <button onclick="downloadHTML()" class="glow-btn px-4 py-2 rounded-lg ml-auto text-sm md:text-base">⬇ Download</button>
+        <div class="flex gap-2 ml-auto">
+          <button onclick="downloadHTML()" class="glow-btn px-4 py-2 rounded-lg text-sm md:text-base">⬇️ Download</button>
+          <button onclick="showConvertModal()" class="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-sm md:text-base">
+            🔄 Convert to Full-Stack
+          </button>
+        </div>
       </div>
+
+      {% if tokens_used %}
+      <div class="mb-4 text-sm text-slate-400">
+        <span class="bg-slate-800 px-3 py-1 rounded-full">🎯 Tokens used: {{ tokens_used }}</span>
+      </div>
+      {% endif %}
 
       <div id="previewArea">
-         <iframe srcdoc="{{ generated_html|safe }}" class="w-full h-[600px] rounded-xl border"></iframe>
+        <iframe src="/preview/" class="w-full h-[600px] rounded-xl border border-slate-700"></iframe>
       </div>
-
 
       <div id="codeArea" class="hidden">
         <textarea id="htmlOutput" class="w-full h-[400px] md:h-[600px] p-4 rounded-lg bg-slate-900 text-green-400 font-mono text-xs md:text-sm">{{ generated_html }}</textarea>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Results for Full-Stack Project -->
+    {% if project_data %}
+    <section class="mt-10 w-full max-w-5xl glass rounded-2xl shadow-2xl p-6 md:p-8">
+      <div class="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        <div>
+          <h3 class="text-2xl font-bold animate-text">{{ project_data.title }}</h3>
+          <p class="text-slate-400 text-sm mt-1">{{ project_data.description }}</p>
+          <div class="flex gap-2 mt-2 flex-wrap">
+            <span class="bg-blue-600/30 px-3 py-1 rounded-full text-xs">{{ project_data.stack }}</span>
+            <span class="bg-purple-600/30 px-3 py-1 rounded-full text-xs">Full-Stack</span>
+            {% if project_data.tokens %}
+            <span class="bg-slate-700 px-3 py-1 rounded-full text-xs">🎯 {{ project_data.tokens }} tokens</span>
+            {% endif %}
+          </div>
+        </div>
+        <a href="/download/{{ project_data.id }}/"
+           class="glow-btn px-6 py-3 rounded-lg font-bold ml-auto text-center">
+          📦 Download ZIP
+        </a>
+      </div>
+
+      <!-- File Explorer -->
+      <div class="mt-6">
+        <h4 class="text-xl font-bold mb-4 flex items-center gap-2">
+          <span>📁</span> Generated Files
+        </h4>
+        <div class="space-y-4">
+          {% for category, files in project_data.files.items %}
+          {% if files %}
+          <div class="glass rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-xl">
+                {% if category == 'frontend' %}🎨
+                {% elif category == 'backend' %}⚙️
+                {% elif category == 'database' %}💾
+                {% elif category == 'config' %}🔧
+                {% else %}📄{% endif %}
+              </span>
+              <h5 class="font-bold text-lg capitalize">{{ category }}</h5>
+              <span class="ml-auto text-xs text-slate-400">{{ files|length }} file{{ files|length|pluralize }}</span>
+            </div>
+            <div class="space-y-2">
+              {% for filename, content in files.items %}
+              <details class="file-item rounded-lg p-3 cursor-pointer">
+                <summary class="font-mono text-sm text-cyan-400 hover:text-cyan-300 flex items-center gap-2">
+                  <span>📄</span>
+                  <span>{{ filename }}</span>
+                  <span class="ml-auto text-xs text-slate-500">{{ content|length }} chars</span>
+                </summary>
+                <div class="mt-3">
+                  <pre class="code-preview p-4 rounded-lg overflow-x-auto text-xs"><code class="text-green-400">{{ content }}</code></pre>
+                  <button onclick="copyToClipboard('{{ filename|escapejs }}', this)"
+                          class="mt-2 px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs">
+                    📋 Copy
+                  </button>
+                </div>
+              </details>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
       </div>
     </section>
     {% endif %}
@@ -122,10 +336,54 @@
       <h2 class="text-xl md:text-2xl font-bold mb-4">About ZynoxGenI</h2>
       <p class="text-sm md:text-base">
         We craft intelligent, digital-first solutions to turn your ideas into stunning interactive websites with the power of AI.
-        This generator is one of our flagship projects, showcasing innovation at the intersection of design and technology.
+        Now supporting both static and full-stack website generation with modern tech stacks.
       </p>
     </section>
   </main>
+
+  <!-- Convert Modal -->
+  <div id="convertModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="glass rounded-2xl p-6 md:p-8 max-w-md w-full">
+      <h3 class="text-2xl font-bold mb-4 animate-text">🔄 Convert to Full-Stack</h3>
+      <p class="text-slate-300 mb-6">Transform your static website into a full-stack application.</p>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block font-semibold mb-2">Select Stack</label>
+          <select id="convertStack" class="w-full p-3 rounded-lg bg-slate-900/40 border border-slate-700">
+            <option value="react_node">⚛️ React + Node.js</option>
+            <option value="nextjs">▲ Next.js</option>
+            <option value="vue_express">💚 Vue + Express</option>
+            <option value="django_react">🐍 Django + React</option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="convertAuth" class="feature-checkbox">
+            <span>🔐 Add Authentication</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="convertDb" class="feature-checkbox">
+            <span>💾 Add Database</span>
+          </label>
+          <label class="flex items-center gap-2">
+            <input type="checkbox" id="convertApi" class="feature-checkbox" checked>
+            <span>🔌 Add API</span>
+          </label>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button onclick="hideConvertModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg flex-1">
+            Cancel
+          </button>
+          <button onclick="convertToFullStack()" class="glow-btn px-4 py-2 rounded-lg flex-1">
+            Convert
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="mt-20 w-full glass border-t border-white/10">
@@ -172,7 +430,23 @@
       );
     }
 
-    // Tab switching
+    // Project type switching
+    function switchProjectType(type) {
+      document.getElementById('project_type').value = type;
+
+      // Update tabs
+      document.getElementById('staticTab').classList.toggle('active', type === 'static');
+      document.getElementById('fullstackTab').classList.toggle('active', type === 'fullstack');
+
+      // Show/hide options
+      document.getElementById('staticOptions').classList.toggle('hidden', type !== 'static');
+      document.getElementById('fullstackOptions').classList.toggle('hidden', type !== 'fullstack');
+
+      // Update tagline
+      document.getElementById('projectTypeText').textContent = type === 'static' ? 'static' : 'full-stack';
+    }
+
+    // Tab switching for preview/code
     const previewBtn = document.getElementById("tabPreview");
     const codeBtn = document.getElementById("tabCode");
     const previewArea = document.getElementById("previewArea");
@@ -183,11 +457,13 @@
         codeArea.classList.add("hidden");
         previewBtn.classList.add("glow-btn");
         codeBtn.classList.remove("glow-btn");
+        codeBtn.classList.add("bg-slate-700");
       });
       codeBtn.addEventListener("click", () => {
         previewArea.classList.add("hidden");
         codeArea.classList.remove("hidden");
         codeBtn.classList.add("glow-btn");
+        codeBtn.classList.remove("bg-slate-700");
         previewBtn.classList.remove("glow-btn");
       });
     }
@@ -203,6 +479,80 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+
+    // Copy to clipboard
+    function copyToClipboard(filename, button) {
+      const codeBlock = button.previousElementSibling.querySelector('code');
+      const text = codeBlock.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        button.textContent = '✅ Copied!';
+        setTimeout(() => {
+          button.textContent = '📋 Copy';
+        }, 2000);
+      });
+    }
+
+    // Convert modal
+    function showConvertModal() {
+      document.getElementById('convertModal').classList.remove('hidden');
+    }
+
+    function hideConvertModal() {
+      document.getElementById('convertModal').classList.add('hidden');
+    }
+
+    async function convertToFullStack() {
+      const stack = document.getElementById('convertStack').value;
+      const hasAuth = document.getElementById('convertAuth').checked;
+      const hasDb = document.getElementById('convertDb').checked;
+      const hasApi = document.getElementById('convertApi').checked;
+
+      hideConvertModal();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '⏳ Converting... Please wait';
+
+      try {
+        const response = await fetch('/convert-to-fullstack/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          },
+          body: JSON.stringify({
+            stack: stack,
+            has_authentication: hasAuth,
+            has_database: hasDb,
+            has_api: hasApi
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert('❌ Error: ' + data.error);
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '⚡ Generate Website';
+        }
+      } catch (error) {
+        alert('❌ Error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '⚡ Generate Website';
+      }
+    }
+
+    // Form submission loading state
+    document.getElementById('generatorForm').addEventListener('submit', function(e) {
+      const button = document.getElementById('submitBtn');
+      const projectType = document.getElementById('project_type').value;
+      button.disabled = true;
+      button.innerHTML = projectType === 'fullstack'
+        ? '⏳ Generating Full-Stack... (30-60 seconds)'
+        : '⏳ Generating... Please wait';
+    });
   </script>
 </body>
 </html>
