@@ -7,11 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security
 SECRET_KEY = os.environ.get("SECRET_KEY", "bz)l1hdqed1(upwi_pz*l1b_ni164rcjchbxl58)a0zq*ed_53")
 DEBUG = os.environ.get("DEBUG", "False") == "True"
-ALLOWED_HOSTS = [
-    "zynoxgeni-ai-website.onrender.com",
-    "localhost",
-    "127.0.0.1"
-    "anirudhzalki.github.io/zynoxgeni-website-generator/"
+ALLOWED_HOSTS = ['*'
 ]  # Replace * with your Render URL for more security
 
 # Applications
